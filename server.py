@@ -11,7 +11,26 @@ import json
 
 from decorators import actions
 
+
+def disconnected(func):
+    """
+    decorator to make a function called when all clients are
+    disconnected from the webserver.
+    """
+    disconnected.funcs.append(func)
+disconnected.funcs = []
+
+
+
 class Handler(object):
+    """
+    class to handle websocket connections.  a new instance is
+    created for every websocket connection.
+
+    s is a class variable that holds a list of all open sockets.
+    currents holds the websocket currently calling the actions
+    so the ui variable points to the right socket.
+    """
     s = []
     currents = []
 
@@ -20,6 +39,12 @@ class Handler(object):
         Handler.s.append(ws)
 
     def handle(self):
+        """
+        main loop for a connected websocket. this function
+        should always be running while a socket it connected.
+        this function should clean up the socket when it finished
+        (ie. remove it from Handler.s
+        """
         if "connected" in actions:
             Handler.currents.append(self.ws)
             actions["connected"]()
@@ -38,7 +63,13 @@ class Handler(object):
                 self.do_message(m)
 
 
+        # remove websocket from connected socket list
         Handler.s.remove(self.ws)
+        # check if no more sockets remain and call
+        # disconnect functions if so.
+        if len(s) is 0:
+            for f in disconnected.funcs:
+                f()
 
     def do_message(self, m):
         try:
@@ -59,6 +90,10 @@ class Handler(object):
             Handler.currents.pop()
 
 class Caller(object):
+    """
+    convenience class so ui.action methods are dynamically created
+    to call actions defined in the clients.
+    """
     def __init__(self, socks):
         self.socks = socks
 
@@ -70,12 +105,15 @@ class Caller(object):
 
         return makecall
 
+# uis and ui global variables
 uis = Caller(Handler.s)
 ui = Caller(Handler.currents)
 
 
 
 app = Bottle()
+
+# create a bottle webapp
 
 @app.route("/")
 def index():
