@@ -86,7 +86,12 @@ class Handler(object):
             print("dont know how to %s" % action)
         else:
             Handler.currents.append(self.ws)
-            actions[action](**m)
+            try:
+                actions[action](**m)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(e)
             Handler.currents.pop()
 
 class Caller(object):
