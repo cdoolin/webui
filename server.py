@@ -67,7 +67,7 @@ class Handler(object):
         Handler.s.remove(self.ws)
         # check if no more sockets remain and call
         # disconnect functions if so.
-        if len(s) is 0:
+        if len(Handler.s) is 0:
             for f in disconnected.funcs:
                 f()
 
