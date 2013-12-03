@@ -106,7 +106,10 @@ class Caller(object):
         def makecall(**kwargs):
             kwargs.update({'action': name})
             for s in self.socks:
-                s.send(json.dumps(kwargs))
+                try:
+                    s.send(json.dumps(kwargs))
+                except:
+                    pass
 
         return makecall
 

@@ -18,6 +18,7 @@ function _WebUI(){
         m = JSON.parse(m.data);
         if(this.actions[m.action] != undefined)
             this.actions[m.action](m);
+        else console.log("don't know how to " + m.action);
     }.bind(this);
 
 };
