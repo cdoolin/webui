@@ -5,7 +5,8 @@ import os
 ROOT = os.path.dirname(os.path.realpath(__file__))
 
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import WebSocketHandler, WebSocketError
+from geventwebsocket.handler import WebSocketHandler
+from geventwebsocket import WebSocketError
 
 import json
 
