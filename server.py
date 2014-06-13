@@ -12,15 +12,25 @@ import json
 
 from decorators import actions
 
+import logging
+logger = logging.getLogger("webui")
 
-def disconnected(func):
+
+def format_action(action, message):
+    if logger.isEnabledFor(20): # if inabled for INFO
+        argstr = ", ".join("%s=%s" % (k, v) for k, v in message.iteritems())
+        return "%s(%s)" % (action, argstr)
+    else:
+        return action
+
+
+def alldisconnected(func):
     """
     decorator to make a function called when all clients are
     disconnected from the webserver.
     """
-    disconnected.funcs.append(func)
-disconnected.funcs = []
-
+    alldisconnected.funcs.append(func)
+alldisconnected.funcs = []
 
 
 class Handler(object):
@@ -46,6 +56,11 @@ class Handler(object):
         this function should clean up the socket when it finished
         (ie. remove it from Handler.s
         """
+        self.ws_addr = "%s:%s" % (
+            self.ws.environ["REMOTE_ADDR"],
+            self.ws.environ["REMOTE_PORT"])
+        logger.info("%s connected" % self.ws_addr)
+
         if "connected" in actions:
             Handler.currents.append(self.ws)
             actions["connected"]()
@@ -63,14 +78,19 @@ class Handler(object):
             else:
                 self.do_message(m)
 
+        if "disconnected" in actions:
+            Handler.currents.append(self.ws)
+            actions["disconnected"]()
+            Handler.currents.pop()
 
         # remove websocket from connected socket list
         Handler.s.remove(self.ws)
         # check if no more sockets remain and call
         # disconnect functions if so.
         if len(Handler.s) is 0:
-            for f in disconnected.funcs:
+            for f in alldisconnected.funcs:
                 f()
+        logger.info("%s disconnected" % self.ws_addr)
 
     def do_message(self, m):
         try:
@@ -80,6 +100,7 @@ class Handler(object):
             m = {}
 
         action = m.pop("action", None)
+        logger.info("%s called %s" % (self.ws_addr, format_action(action, m)))
 
         if action is None:
             print("expected an action in ws")
@@ -109,16 +130,14 @@ class Caller(object):
             for s in self.socks:
                 try:
                     s.send(json.dumps(kwargs))
-                except:
-                    pass
+                except Exception as e:
+                    logger.error("caller: %s" % str(e))
 
         return makecall
 
 # uis and ui global variables
 uis = Caller(Handler.s)
 ui = Caller(Handler.currents)
-
-
 
 app = Bottle()
 
