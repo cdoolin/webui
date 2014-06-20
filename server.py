@@ -127,11 +127,15 @@ class Caller(object):
     def __getattr__(self, name):
         def makecall(**kwargs):
             kwargs.update({'action': name})
-            for s in self.socks:
+            # make a copy of the list to iterate over so we can remove
+            # items while iterating.
+            for s in self.socks[:]:
                 try:
                     s.send(json.dumps(kwargs))
-                except Exception as e:
-                    logger.error("caller: %s" % str(e))
+                # except Exception as e:
+                # logger.error("caller: %s" % str(e))
+                except WebSocketError:
+                    self.socks.remove(s)
 
         return makecall
 
