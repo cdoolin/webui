@@ -7,6 +7,7 @@ ROOT = os.path.dirname(os.path.realpath(__file__))
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
+from gevent.lock import RLock
 
 import json
 
@@ -127,15 +128,21 @@ class Caller(object):
     def __getattr__(self, name):
         def makecall(**kwargs):
             kwargs.update({'action': name})
-            # make a copy of the list to iterate over so we can remove
-            # items while iterating.
-            for s in self.socks[:]:
-                try:
+            for s in self.socks:
+                if s.closed:
+                    continue
+
+                with s.environ['lock']:
                     s.send(json.dumps(kwargs))
+                # try:
+                # s.send(json.dumps(kwargs))
                 # except Exception as e:
                 # logger.error("caller: %s" % str(e))
-                except WebSocketError:
-                    self.socks.remove(s)
+                # except WebSocketError:
+                #     self.socks.remove(s)
+                # finally:
+                #     print("unlock %s" % str(s.environ['lock']))
+                # s.environ['lock'].release()
 
         return makecall
 
@@ -157,10 +164,11 @@ def handle_socket():
 
     if not ws:
         print("bad websocket, aborting.")
-        abort(400, "Expected WebSocket request.")
-
-    h = Handler(ws)
-    h.handle()
+        abort(400, "bad request.")
+    else:
+        ws.environ['lock'] = RLock()
+        h = Handler(ws)
+        h.handle()
 
 
 @app.route("/webui.js")
