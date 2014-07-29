@@ -1,5 +1,6 @@
 function _WebUI(){
     this.actions = {}
+    this.verbose = false;
 
     var uri = 'ws://' + window.location.host + '/socket';
     this.ws = new WebSocket(uri);
@@ -16,6 +17,8 @@ function _WebUI(){
 
     this.ws.onmessage = function(m) {
         m = JSON.parse(m.data);
+        if(this.verbose)
+            console.log(m);
         if(this.actions[m.action] != undefined)
             this.actions[m.action](m);
         else console.log("don't know how to " + m.action);
