@@ -17,8 +17,10 @@ function _WebUI(){
 
     this.ws.onmessage = function(m) {
         m = JSON.parse(m.data);
-        if(this.verbose)
+        if(this.verbose) {
+            console.log("reveived:");
             console.log(m);
+        }
         if(this.actions[m.action] != undefined)
             this.actions[m.action](m);
         else console.log("don't know how to " + m.action);
@@ -31,6 +33,12 @@ _WebUI.prototype.call = function(action, args) {
         args = {}
 
     args["action"] = String(action);
+
+    if (this.verbose) {
+        console.log("sending:");
+        console.log(args);
+    }   
+
     this.ws.send(JSON.stringify(args));
 };
 

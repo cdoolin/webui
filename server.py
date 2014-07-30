@@ -117,6 +117,7 @@ class Handler(object):
                 logger.error("while doing %s: %s" % (action, str(e)))
             Handler.currents.pop()
 
+
 class Caller(object):
     """
     convenience class so ui.action methods are dynamically created
@@ -127,6 +128,7 @@ class Caller(object):
 
     def __getattr__(self, name):
         def makecall(**kwargs):
+            logger.info("calling %s" % format_action(name, kwargs))
             kwargs.update({'action': name})
             for s in self.socks:
                 if s.closed:
@@ -139,6 +141,7 @@ class Caller(object):
                         logger.error("could not send message: %s" % str(e))
 
         return makecall
+
 
 # uis and ui global variables
 uis = Caller(Handler.s)
