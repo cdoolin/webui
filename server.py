@@ -97,16 +97,16 @@ class Handler(object):
         try:
             m = json.loads(m)
         except ValueError:
-            print("expected json from web")
+            logger.warning("expected json from web")
             m = {}
 
         action = m.pop("action", None)
         logger.info("%s called %s" % (self.ws_addr, format_action(action, m)))
 
         if action is None:
-            print("expected an action in ws")
+            logger.warning("expected an action in ws message")
         elif action not in actions:
-            print("dont know how to %s" % action)
+            logger.warning("dont know how to %s" % action)
         else:
             Handler.currents.append(self.ws)
             try:
@@ -114,7 +114,7 @@ class Handler(object):
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                print(e)
+                logger.error("while doing %s: %s" % (action, str(e)))
             Handler.currents.pop()
 
 class Caller(object):
@@ -133,16 +133,10 @@ class Caller(object):
                     continue
 
                 with s.environ['lock']:
-                    s.send(json.dumps(kwargs))
-                # try:
-                # s.send(json.dumps(kwargs))
-                # except Exception as e:
-                # logger.error("caller: %s" % str(e))
-                # except WebSocketError:
-                #     self.socks.remove(s)
-                # finally:
-                #     print("unlock %s" % str(s.environ['lock']))
-                # s.environ['lock'].release()
+                    try:
+                        s.send(json.dumps(kwargs))
+                    except WebSocketError as e:
+                        logger.error("could not send message: %s" % str(e))
 
         return makecall
 
@@ -163,7 +157,7 @@ def handle_socket():
     ws = request.environ.get('wsgi.websocket')
 
     if not ws:
-        print("bad websocket, aborting.")
+        logger.error("bad websocket, aborting.")
         abort(400, "bad request.")
     else:
         ws.environ['lock'] = RLock()
