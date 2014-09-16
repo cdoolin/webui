@@ -2,3 +2,4 @@ env/*
 *.swp
 *.DS_Store
 *.pyc
+example/webui
