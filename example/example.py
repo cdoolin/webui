@@ -21,4 +21,6 @@ def saysthings():
     uis.hello(txt="server ping")
 
 serv = server(1234)
+print("Serving on http://localhost:1234")
+print("Use control-c to quit")
 serv.serve_forever()
