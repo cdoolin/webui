@@ -14,8 +14,10 @@ import json
 from decorators import actions
 
 import logging
+logging.basicConfig()
 logger = logging.getLogger("webui")
-
+logger.setLevel(logging.DEBUG)
+logger.info("hello logger")
 
 def format_action(action, message):
     if logger.isEnabledFor(20): # if inabled for INFO
@@ -132,6 +134,7 @@ class Caller(object):
             kwargs.update({'action': name})
             for s in self.socks:
                 if s.closed:
+                    logging.warn("socket closed")
                     continue
 
                 with s.environ['lock']:
@@ -139,6 +142,8 @@ class Caller(object):
                         s.send(json.dumps(kwargs))
                     except WebSocketError as e:
                         logger.error("could not send message: %s" % str(e))
+                    except Exception as e:
+                        logger.error("unknown error %s" % str(e))
 
         return makecall
 
